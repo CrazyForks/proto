@@ -4,6 +4,7 @@
 use anyhow::{Result, anyhow};
 use proto_shim::{exec_command_and_replace, locate_proto_exe};
 use rust_json::{JsonElem as Json, json_parse};
+use starbase_utils::envx;
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io::Write;
@@ -28,16 +29,22 @@ macro_rules! debug {
 fn get_proto_home() -> Result<PathBuf> {
     debug!("Determining proto home direcory");
 
-    if let Ok(root) = env::var("PROTO_HOME") {
-        debug!("Found in `PROTO_HOME` environment variable: {root}");
+    if let Some(root) = envx::path_var("PROTO_HOME") {
+        debug!(
+            "Found in `PROTO_HOME` environment variable: {}",
+            root.display()
+        );
 
-        return Ok(root.into());
+        return Ok(root);
     }
 
-    if let Ok(root) = env::var("XDG_DATA_HOME") {
-        let xdg_dir = PathBuf::from(root).join("proto");
+    if let Some(root) = envx::path_var("XDG_DATA_HOME") {
+        let xdg_dir = root.join("proto");
 
-        debug!("Found in `XDG_DATA_HOME` environment variable: {xdg_dir:?}");
+        debug!(
+            "Found in `XDG_DATA_HOME` environment variable: {}",
+            xdg_dir.display()
+        );
 
         return Ok(xdg_dir);
     }

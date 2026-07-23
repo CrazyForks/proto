@@ -20,7 +20,9 @@ pub enum Export {
 pub fn find_profiles(shell: &BoxedShell, home_dir: &Path) -> Vec<PathBuf> {
     debug!("Finding profile files for {}", shell);
 
-    if let Ok(profile_env) = env::var("PROTO_SHELL_PROFILE") {
+    if let Ok(profile_env) = env::var("PROTO_SHELL_PROFILE")
+        && !profile_env.is_empty()
+    {
         return vec![PathBuf::from(profile_env)];
     }
 

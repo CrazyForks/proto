@@ -15,6 +15,7 @@ pub const SHIM_VERSION: u8 = 20;
 
 pub fn locate_proto_exe(exe_name: &str) -> Option<PathBuf> {
     let exe_name = get_exe_file_name(exe_name);
+    let proto_version = env::var("PROTO_VERSION").ok();
     let mut lookup_dirs = vec![];
 
     // When in development, ensure we're using the target built proto,
@@ -46,10 +47,24 @@ pub fn locate_proto_exe(exe_name: &str) -> Option<PathBuf> {
         }
     }
 
-    if let Ok(dir) = env::var("PROTO_HOME") {
+    if let Ok(dir) = env::var("PROTO_HOME")
+        && !dir.is_empty()
+    {
         let dir = PathBuf::from(dir);
 
-        if let Ok(version) = env::var("PROTO_VERSION") {
+        if let Some(version) = &proto_version {
+            lookup_dirs.push(dir.join("tools").join("proto").join(version));
+        }
+
+        lookup_dirs.push(dir.join("bin"));
+    }
+
+    if let Ok(dir) = env::var("XDG_DATA_HOME")
+        && !dir.is_empty()
+    {
+        let dir = PathBuf::from(dir).join("proto");
+
+        if let Some(version) = &proto_version {
             lookup_dirs.push(dir.join("tools").join("proto").join(version));
         }
 
@@ -73,7 +88,7 @@ pub fn locate_proto_exe(exe_name: &str) -> Option<PathBuf> {
     // PROTO_HOME is set to something random, but the proto
     // binaries still exist in their original location.
     if let Some(dir) = dirs::home_dir() {
-        if let Ok(version) = env::var("PROTO_VERSION") {
+        if let Some(version) = &proto_version {
             lookup_dirs.push(dir.join(".proto").join("tools").join("proto").join(version));
         }
 

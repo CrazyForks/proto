@@ -93,14 +93,17 @@ pub async fn setup(session: ProtoSession, args: SetupArgs) -> SessionResult {
         vec![
             Export::Var(
                 "PROTO_HOME".into(),
-                env::var("PROTO_HOME").unwrap_or_else(|_| {
-                    if env::var("XDG_DATA_HOME").is_ok() {
-                        "$XDG_DATA_HOME/proto"
-                    } else {
-                        "$HOME/.proto"
-                    }
-                    .into()
-                }),
+                env::var("PROTO_HOME")
+                    .ok()
+                    .filter(|home| !home.is_empty())
+                    .unwrap_or_else(|| {
+                        if envx::path_var("XDG_DATA_HOME").is_some() {
+                            "$XDG_DATA_HOME/proto"
+                        } else {
+                            "$HOME/.proto"
+                        }
+                        .into()
+                    }),
             ),
             Export::Path(vec!["$PROTO_HOME/shims".into(), "$PROTO_HOME/bin".into()]),
         ],
