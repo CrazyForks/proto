@@ -90,6 +90,35 @@
       ]
     },
     {
+      "id": "java",
+      "locator": "github://moonrepo/plugins/java_tool",
+      "format": "wasm",
+      "name": "Java",
+      "description": "Java is a high-level, class-based, object-oriented programming language.",
+      "author": "moonrepo",
+      "homepageUrl": "https://www.java.com/",
+      "repositoryUrl": "https://github.com/moonrepo/plugins",
+      "devicon": "java",
+      "bins": [
+        "java",
+        "javac",
+        "jar"
+      ],
+      "detectionSources": [
+        {
+          "file": ".java-version",
+          "url": "https://github.com/justjavac/jvm"
+        },
+        {
+          "file": ".sdkmanrc",
+          "url": "https://sdkman.io/"
+        }
+      ],
+      "globalsDirs": [
+        "$JAVA_HOME/bin"
+      ]
+    },
+    {
       "id": "moon",
       "locator": "github://moonrepo/plugins/moon_tool",
       "format": "wasm",

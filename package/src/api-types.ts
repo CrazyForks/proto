@@ -97,13 +97,15 @@ export interface TestEnvironment {
 
 export type PluginLocator = string;
 
+export type Version = string;
+
 /**
  * Information about the current state of the plugin,
  * after a version has been resolved.
  */
 export interface PluginContext {
 	/** The version of proto (the core crate) calling plugin functions. */
-	protoVersion?: string | null;
+	protoVersion?: Version | null;
 	/** Virtual path to the tool's temporary directory. */
 	tempDir: VirtualPath;
 	/** Virtual path to the tool's installation directory. */
@@ -120,7 +122,7 @@ export interface PluginContext {
  */
 export interface PluginUnresolvedContext {
 	/** The version of proto (the core crate) calling plugin functions. */
-	protoVersion?: string | null;
+	protoVersion?: Version | null;
 	/** Virtual path to the tool's temporary directory. */
 	tempDir: VirtualPath;
 	/** @deprecated */
@@ -137,10 +139,15 @@ export type PluginType = 'command-line' | 'language' | 'dependency-manager' | 'v
 /** Controls aspects of the tool inventory. */
 export interface ToolInventoryOptions {
 	/**
-	 * Override the tool inventory directory (where all versions are installed).
+	 * Override the tool inventory directory path (where all versions are installed).
 	 * This is an advanced feature and should only be used when absolutely necessary.
 	 */
 	overrideDir?: VirtualPath | null;
+	/**
+	 * Override the name of the tool inventory directory. If you want to override the
+	 * entire path, use `override_dir` instead.
+	 */
+	overrideDirName?: string | null;
 	/**
 	 * When the inventory is backend managed, scope the inventory directory name
 	 * with the backend as a prefix.
@@ -196,11 +203,11 @@ export interface RegisterToolOutput {
 	/** Options for integrating with a lockfile. */
 	lockOptions?: ToolLockOptions;
 	/** Minimum version of proto required to execute this plugin. */
-	minimumProtoVersion?: string | null;
+	minimumProtoVersion?: Version | null;
 	/** Human readable name of the tool. */
 	name: string;
 	/** Version of the plugin. */
-	pluginVersion?: string | null;
+	pluginVersion?: Version | null;
 	/** Other plugins that this plugin requires. */
 	requires?: string[];
 	/**
@@ -256,7 +263,10 @@ export type SourceLocation = ArchiveSource | GitSource;
 
 /** Output returned by the `register_backend` function. */
 export interface RegisterBackendOutput {
-	/** Unique identifier for this backend. Will be used as the folder name. */
+	/**
+	 * Unique identifier for this backend. Will be used as the folder name
+	 * when utilizing builders (via `source`).
+	 */
 	backendId: Id;
 	/**
 	 * List of executables, relative from the backend directory,
@@ -386,10 +396,12 @@ export interface DownloadPrebuiltOutput {
 	 */
 	httpHeaders?: Record<string, string>;
 	/**
-	 * A script, relative from the install directory, to execute after
+	 * A script file, relative from the install directory, to execute after
 	 * the prebuilt has been installed.
 	 */
 	postScript?: string | null;
+	/** A list of arguments to pass to the script file when executing it. */
+	postScriptArgs?: string[];
 }
 
 /** Input passed to the `unpack_archive` function. */
@@ -683,11 +695,13 @@ export type BuildInstruction = {
 	type: 'set-env-var';
 };
 
+export type Requirement = string;
+
 export type BuildRequirement = {
 	requirement: string;
 	type: 'command-exists-on-path';
 } | {
-	requirement: [string, string, string | null];
+	requirement: [string, Requirement, string | null];
 	type: 'command-version';
 } | {
 	requirement: string;
@@ -696,7 +710,7 @@ export type BuildRequirement = {
 	requirement: [string, string];
 	type: 'git-config-setting';
 } | {
-	requirement: string;
+	requirement: Requirement;
 	type: 'git-version';
 } | {
 	requirement: 'xcode-command-line-tools';
