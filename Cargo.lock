@@ -3576,7 +3576,7 @@ dependencies = [
 
 [[package]]
 name = "proto_shim"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "dirs",
  "windows-sys 0.61.2",

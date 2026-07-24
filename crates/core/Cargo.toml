@@ -12,7 +12,7 @@ rust-version = "1.89.0"
 proto_pdk_api = { version = "0.32.1", path = "../pdk-api", features = [
     "schematic",
 ] }
-proto_shim = { version = "0.8.2", path = "../shim" }
+proto_shim = { version = "0.8.3", path = "../shim" }
 system_env = { version = "0.10.0", path = "../system-env" }
 version_spec = { version = "0.11.2", path = "../version-spec", features = [
     "schematic",
