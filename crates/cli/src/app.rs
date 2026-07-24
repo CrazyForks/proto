@@ -166,14 +166,13 @@ pub struct App {
 
     #[arg(
         value_enum,
-        default_value_t = default_reporter(),
         long,
         short = 'r',
         global = true,
         env = "PROTO_REPORTER",
         help = "Print output in a specific format"
     )]
-    pub reporter: ReporterFormat,
+    pub reporter: Option<ReporterFormat>,
 
     #[arg(
         value_enum,
@@ -199,8 +198,55 @@ pub struct App {
     pub command: Commands,
 }
 
+/// Who owns the stdout stream for the current command invocation.
+///
+/// Reporter-owned commands write formatted output to stdout. Every other
+/// owner reserves stdout for its protocol payload and routes reporter output
+/// to stderr.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StdoutOwner {
+    Reporter,
+    ShellCode,
+    CompletionCode,
+    McpStdio,
+}
+
 impl App {
-    pub fn setup_env_vars(&mut self) {
+    pub fn is_reporter_explicit(&self) -> bool {
+        self.json || self.reporter.is_some()
+    }
+
+    pub fn stdout_owner(&self) -> StdoutOwner {
+        match &self.command {
+            Commands::Activate(args) => {
+                if self.is_reporter_explicit() && self.reporter_format().is_json() && !args.export {
+                    StdoutOwner::Reporter
+                } else {
+                    StdoutOwner::ShellCode
+                }
+            }
+            Commands::Completions(_) => StdoutOwner::CompletionCode,
+            Commands::Mcp(args) => {
+                if args.info {
+                    StdoutOwner::Reporter
+                } else {
+                    StdoutOwner::McpStdio
+                }
+            }
+            _ => StdoutOwner::Reporter,
+        }
+    }
+
+    pub fn reporter_format(&self) -> ReporterFormat {
+        match self.reporter {
+            Some(format) if format.is_json() => format,
+            _ if self.json => ReporterFormat::Json,
+            Some(format) => format,
+            None => default_reporter(),
+        }
+    }
+
+    pub fn setup_env_vars(&self) {
         unsafe {
             env::set_var("PROTO_APP_LOG", self.log.to_string());
             env::set_var("PROTO_VERSION", env!("CARGO_PKG_VERSION"));
@@ -221,17 +267,8 @@ impl App {
                 },
             );
 
-            // Convenience mapping
-            if self.json && !self.reporter.is_json() {
-                self.reporter = if ai_env::is_ai_agent() {
-                    ReporterFormat::Ndjson
-                } else {
-                    ReporterFormat::Json
-                };
-            }
-
             // Disable ANSI colors in JSON output
-            if self.json || self.reporter.is_json() {
+            if self.reporter_format().is_json() {
                 env::set_var("NO_COLOR", "1");
                 env::remove_var("FORCE_COLOR");
             }

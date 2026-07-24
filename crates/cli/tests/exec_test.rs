@@ -44,6 +44,32 @@ mod exec {
     }
 
     #[test]
+    fn errors_use_reporter_output_in_agent_environments() {
+        let sandbox = create_empty_proto_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("exec")
+                .env("CODEX_CI", "1")
+                .env_remove("PROTO_REPORTER");
+        });
+
+        let stdout = assert.stdout();
+        let records = stdout
+            .lines()
+            .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+            .collect::<Vec<_>>();
+
+        assert.failure();
+        assert!(records.iter().any(|record| {
+            record.get("type").and_then(|value| value.as_str()) == Some("error")
+                && record
+                    .get("message")
+                    .and_then(|value| value.as_str())
+                    .is_some_and(|message| message.contains("A command is required for execution."))
+        }));
+    }
+
+    #[test]
     fn can_execute_without_tools() {
         let sandbox = create_empty_proto_sandbox();
 

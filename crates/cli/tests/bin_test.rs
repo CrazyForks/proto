@@ -18,7 +18,7 @@ mod bin {
     }
 
     #[test]
-    fn returns_path_if_installed() {
+    fn returns_path_in_text_and_agent_environments() {
         let sandbox = create_empty_proto_sandbox();
 
         sandbox
@@ -40,6 +40,39 @@ mod bin {
                 .success()
                 .stdout(predicate::str::contains("tools/protostar/1.0.0/protostar"));
         }
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("bin")
+                .arg("protostar")
+                .arg("1.0.0")
+                .env("CODEX_CI", "1")
+                .env_remove("PROTO_REPORTER");
+        });
+        let stdout = assert.stdout();
+
+        let records = stdout
+            .lines()
+            .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+            .collect::<Vec<_>>();
+
+        assert!(records.iter().any(|record| {
+            record.get("type").and_then(|value| value.as_str()) == Some("message")
+                && record
+                    .get("message")
+                    .and_then(|value| value.as_str())
+                    .is_some_and(|message| message.contains("Detected an AI agent"))
+        }));
+        assert!(records.iter().any(|record| {
+            record.get("type").and_then(|value| value.as_str()) == Some("message")
+                && record
+                    .get("message")
+                    .and_then(|value| value.as_str())
+                    .is_some_and(|message| {
+                        message.contains("protostar") && message.contains("1.0.0")
+                    })
+        }));
+
+        assert.success();
     }
 
     #[test]
