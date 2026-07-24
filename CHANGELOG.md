@@ -52,6 +52,7 @@
 - Fixed an issue where `proto run` (and shims) could recursively execute forever when falling back to a global executable on `PATH` that is itself a proto shim from another store (typically caused by `HOME` or `PROTO_HOME` changing, or symlinked paths). We now detect the loop and error, and skip shims from foreign stores during the `PATH` lookup.
 - Fixed an issue where `proto run` (and shims) would place the paths of a required tool (e.g. `node` for `npm`) before the paths of the tool being ran within `PATH`, causing the wrong executable to be used.
 - Fixed an issue where concurrent `proto install`s could lose entries in the shims registry (`~/.proto/shims/registry.json`), breaking secondary executables like `uvx`, `bunx`, and `npx`.
+- Fixed an issue where the NDJSON output was overzealous and would apply to output that it shouldn't, like `proto activate` syntax.
 - Fixed some issues where `$XDG_DATA_HOME` wasn't being respected.
 
 #### ⚙️ Internal
